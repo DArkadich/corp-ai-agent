@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: agent
-          image: ghcr.io/example/corp-agent:1.0.0
+          image: ghcr.io/DArkadich/corp-ai-agent.git/corp-agent:78e57f0
           ports:
             - containerPort: 8000
           env:
