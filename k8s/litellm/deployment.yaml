@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: corp-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: litellm }
+  template:
+    metadata:
+      labels: { app: litellm }
+    spec:
+      containers:
+        - name: litellm
+          image: ghcr.io/berriai/litellm:main-latest
+          args: ["--port", "4000"]
+          env:
+            - name: LITELLM_LOG
+              value: "INFO"
+            - name: OLLAMA_BASE_URL
+              value: "http://ollama.corp-ai.svc.cluster.local:11434"
+            - name: LITELLM_MODEL_LIST
+              value: |
+                [
+                  {"model_name": "llama3.1:8b", "litellm_params": {"model": "ollama/llama3.1:8b"}}
+                ]
+          ports:
+            - containerPort: 4000

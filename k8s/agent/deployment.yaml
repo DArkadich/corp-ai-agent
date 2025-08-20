@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-api
+  namespace: corp-ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: agent-api }
+  template:
+    metadata:
+      labels: { app: agent-api }
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: agent
+          image: ghcr.io/example/corp-agent:1.0.0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: OPENAI_API_BASE
+              value: "http://litellm.corp-ai.svc.cluster.local:4000"
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: corp-secrets
+                  key: OPENAI_API_KEY
+            - name: PG_DSN
+              value: "postgresql+psycopg2://raguser:$(POSTGRES_PASSWORD)@pgvector.corp-ai.svc.cluster.local:5432/ragdb"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: corp-secrets
+                  key: POSTGRES_PASSWORD
+            - name: TEI_URL
+              value: "http://tei.corp-ai.svc.cluster.local"
+            - name: MODEL
+              value: "llama3.1:8b"
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8000 }
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8000 }
+            initialDelaySeconds: 30
+            periodSeconds: 10

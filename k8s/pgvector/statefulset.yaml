@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: pgvector
+  namespace: corp-ai
+spec:
+  serviceName: pgvector
+  replicas: 1
+  selector:
+    matchLabels: { app: pgvector }
+  template:
+    metadata:
+      labels: { app: pgvector }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: corp-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: "ragdb"
+            - name: POSTGRES_USER
+              value: "raguser"
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: init-sql
+          configMap:
+            name: pg-init-sql
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests: { storage: 10Gi }
